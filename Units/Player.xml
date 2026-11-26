@@ -87,6 +87,20 @@
 				</Anchors>
 			</Frame>
 
+			<!-- Faction icon (conf.factionIcon): the slot between the level and the class icon, which the target
+			     counter (Units/TargetCounters.lua) takes while it is on; P:ApplyTypeSettings shows it -->
+			<Frame name="$parentfactionFrame" parentKey="factionFrame" hidden="true">
+				<Size x="18" y="18"/>
+				<Anchors>
+					<Anchor point="TOPRIGHT" relativeTo="$parentportraitFrame" relativePoint="TOPLEFT" x="-2" y="-22"/>
+				</Anchors>
+				<Layers>
+					<Layer level="OVERLAY">
+						<Texture parentKey="icon" setAllPoints="true"/>
+					</Layer>
+				</Layers>
+			</Frame>
+
 			<Frame name="$parentstatsFrame" parentKey="statsFrame" inherits="XPerl_Stats_Template">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="$parentnameFrame" relativePoint="BOTTOMLEFT" x="0" y="2"/>

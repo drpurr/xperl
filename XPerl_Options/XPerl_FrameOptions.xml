@@ -4350,9 +4350,30 @@
 						</Scripts>
 					</CheckButton>
 
-					<CheckButton name="$parent_PlayerXP" inherits="XPerlCheckButtonTemplate">
+					<CheckButton name="$parent_PlayerFactionIcon" inherits="XPerlCheckButtonTemplate">
 						<Anchors>
 							<Anchor point="TOPLEFT" relativeTo="$parent_PlayerLevel" relativePoint="BOTTOMLEFT">
+								<Offset><AbsDimension x="0" y="6"/></Offset>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnLoad>
+								XPerl_OptionsSetMyText(self, "XPERL_CONF_PLAYER_FACTIONICON")
+								self.flashFrame = XPerl_PlayerfactionFrame
+								self.configBase = "XPerlDB.player"
+								self.configIndex = "factionIcon"
+								self.configClick = XPerl_Player_Reset
+								-- It takes the Target Counter's slot (Helper page): greyed out while that is on
+								self:HookScript("OnShow", function(button)
+									XPerl_Options_EnableCheck(button, not (XPerlDB and XPerlDB.player and XPerlDB.player.targetCounter))
+								end)
+							</OnLoad>
+						</Scripts>
+					</CheckButton>
+
+					<CheckButton name="$parent_PlayerXP" inherits="XPerlCheckButtonTemplate">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="$parent_PlayerFactionIcon" relativePoint="BOTTOMLEFT">
 								<Offset><AbsDimension x="0" y="6"/></Offset>
 							</Anchor>
 						</Anchors>

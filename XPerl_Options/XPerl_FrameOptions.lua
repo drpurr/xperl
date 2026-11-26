@@ -2279,6 +2279,7 @@ local function XPerl_Player_ConfigDefault(default)
 		threatMode		= "portraitFrame",
 		level			= 1,
 		classIcon		= 1,
+		factionIcon		= false,
 --		xpBar			= nil,
 --		repBar			= nil,
 		pvpIcon			= 1,

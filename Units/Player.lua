@@ -201,8 +201,17 @@ function P:ApplyTypeSettings()
 	self:SetupRunes()		-- before the size: a docked special bar extends the portrait
 	self:ApplySize(max(0, c.size.width or 0))
 
+	-- Faction icon: only in the target counter's slot while the counter is off
+	local faction = UnitFactionGroup("player")
+	local factionAtlas = (faction == "Alliance" and "alliancesymbol") or (faction == "Horde" and "hordesymbol") or nil
+	local showFaction = c.factionIcon and not c.targetCounter and factionAtlas and true or false
+	if (showFaction) then
+		self.factionFrame.icon:SetAtlas(factionAtlas)
+	end
+	self.factionFrame:SetShown(showFaction)
+
 	self.highlight:ClearAllPoints()
-	if (not c.level and not c.classIcon and not c.targetCounter) then
+	if (not c.level and not c.classIcon and not c.targetCounter and not showFaction) then
 		self.highlight:SetPoint("TOPLEFT", self.portraitFrame, "TOPLEFT", 0, 0)
 	else
 		self.highlight:SetPoint("TOPLEFT", self.levelFrame, "TOPLEFT", 0, 0)
