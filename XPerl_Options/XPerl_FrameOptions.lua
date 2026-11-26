@@ -2058,6 +2058,7 @@ local function XPerl_Global_ConfigDefault(default)
 	default.combatFlash	= 1
 	default.maximumScale	= 1.5
 	default.optionsColour	= {r = 0.7, g = 0.2, b = 0.2}	-- 1.8.3
+	default.font		= {face = "default", outline = "NONE"}
 	default.showAFK		= 1				-- 2.2.4
 	default.xperlOldroleicons = 1
 
@@ -2310,6 +2311,7 @@ local function XPerl_Player_ConfigDefault(default)
 			hideBlizzard	= 1,
 			count		= 40,
 			cooldown	= 1,
+			hideTracking	= 1,
 		},
 		debuffs = {
 			enable		= 1,

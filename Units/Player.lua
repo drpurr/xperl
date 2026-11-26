@@ -870,6 +870,7 @@ function P:ConfigureAuras()
 
 	buffRow.enable = buffs.enable
 	buffRow.onlyMine = buffs.onlyMine
+	buffRow.hideTracking = buffs.hideTracking
 	buffRow.size = buffs.size
 	buffRow.rows = buffs.rows
 	-- An explicit icon cap overrides the row limit, so the buff count only applies to an unwrapped row

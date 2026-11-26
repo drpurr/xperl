@@ -321,6 +321,7 @@ function specs.player(s)
 	s:Check("buffs.hideBlizzard", P.."BUFFSHIDEBLIZZ")
 	s:Check("buffs.cooldown", P.."BUFFSCOOLDOWNS")
 	s:Check("buffs.onlyMine", P.."ONLYMYBUFFS")
+	s:Check("buffs.hideTracking", P.."HIDETRACKING")
 	s:Slider("buffs.size", P.."BUFFSIZE", 7, 38)
 	s:Slider("buffs.rows", P.."BUFF_ROWS", 1, 10)
 	s:Slider("buffs.count", P.."MAXBUFFS", 4, 40)
@@ -790,6 +791,10 @@ function specs.global(s)
 	s:Check("minimap.enable", "XPERL_CONF_MINIMAP_ICON").apply = function()
 		XPerl_MinimapButton_Frame:SetShown(XPerlDB.minimap.enable and true or false)
 	end
+
+	s:Group("XPERL_CONF_FONTS")
+	s:Dropdown("font.face", "XPERL_CONF_FONT_FACE", XPerl_FontFaces())
+	s:Dropdown("font.outline", "XPERL_CONF_FONT_OUTLINE", XPerl_FontOutlines)
 
 	s:Group("XPERL_SETTINGS_GROUP_AURATIMERS")
 	s:Check("buffs.cooldown", "XPERL_CONF_BUFFCOOLDOWN")

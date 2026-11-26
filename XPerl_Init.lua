@@ -355,8 +355,75 @@ end
 
 -- XPerl_RegisterUnitText(self)
 local unitText = {}
+local SetTextFont
 function XPerl_RegisterUnitText(self)
 	tinsert(unitText, self)
+	if (conf) then
+		SetTextFont(self)
+	end
+end
+
+-- Global font (conf.font): face is a LibSharedMedia font name or "default" (the text's own font), outline one of
+-- XPerl_FontOutlines or "NONE". With both at their defaults every text keeps its own font; otherwise each text
+-- keeps its own size and takes the chosen face (or its own) and outline (none for "NONE").
+XPerl_FontOutlines = {
+	{"XPERL_CONF_FONT_OUTLINE_NONE", "NONE"},
+	{"XPERL_CONF_FONT_OUTLINE_OUTLINE", "OUTLINE"},
+	{"XPERL_CONF_FONT_OUTLINE_THICK", "THICKOUTLINE"},
+	{"XPERL_CONF_FONT_OUTLINE_SLUG", "OUTLINESLUG"},
+	{"XPERL_CONF_FONT_OUTLINE_MONO", "MONOCHROMEOUTLINE"},
+	{"XPERL_CONF_FONT_OUTLINE_MONOTHICK", "MONOCHROMETHICKOUTLINE"},
+}
+
+-- XPerl_FontFaces(): {label, value} for the font menus: Default, then every LibSharedMedia font by name
+function XPerl_FontFaces()
+	local faces = {{"XPERL_CONF_FONT_DEFAULT", "default"}}
+	local LSM = LibStub("LibSharedMedia-3.0", true)
+	if (LSM) then
+		for _, name in ipairs(LSM:List("font")) do
+			faces[#faces + 1] = {name, name}
+		end
+	end
+	return faces
+end
+
+local textFontOriginal = setmetatable({}, {__mode = "k"})	-- text -> {face, flags} it had before the global font
+
+SetTextFont = function(text)
+	if (not text.GetFont or (text.IsForbidden and text:IsForbidden())) then
+		return
+	end
+	local font = conf.font
+	local outline = font and font.outline or "NONE"
+	local LSM = LibStub("LibSharedMedia-3.0", true)
+	local face = font and font.face ~= "default" and LSM and LSM:Fetch("font", font.face, true)
+	local active = face or outline ~= "NONE"
+
+	local original = textFontOriginal[text]
+	if (not original and not active) then
+		return
+	end
+	local currentFace, size, currentFlags = text:GetFont()
+	if (not size or issecretvalue(size) or issecretvalue(currentFace)) then
+		return
+	end
+	if (not original) then
+		original = {currentFace, currentFlags or ""}
+		textFontOriginal[text] = original
+	end
+	if (active) then
+		text:SetFont(face or original[1], size, outline == "NONE" and "" or outline)
+	else
+		text:SetFont(original[1], size, original[2])
+		textFontOriginal[text] = nil
+	end
+end
+
+-- XPerl_SetTextFont()
+function XPerl_SetTextFont()
+	for _, text in pairs(unitText) do
+		SetTextFont(text)
+	end
 end
 
 -- XPerl_SetTextTransparency()
@@ -434,6 +501,7 @@ function XPerl_OptionActions(which)
 	end
 
 	XPerl_pcall(XPerl_SetTextTransparency)
+	XPerl_pcall(XPerl_SetTextFont)
 	doneOptions = true
 
 	-- Avoid tainting default blizzard buffs using cooldown options. Cooldowns won't show immediately atm.

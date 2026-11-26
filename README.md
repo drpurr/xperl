@@ -297,7 +297,7 @@ Traditional Chinese.
 | `XPerl_SettingsPanel.lua` | X-Perl's pages in the game's Settings panel (Options → AddOns) |
 | `Units/` | Shared unit frame framework (`UnitFrame.lua`, `CastBar.lua`, `Templates.xml`) and one Lua/XML pair per frame type |
 | `XPerl_Options/` | Options window and its localizations |
-| `Libs/` | LibStub and LibEditMode, bundled unmodified |
+| `Libs/` | LibStub, LibEditMode, CallbackHandler-1.0 and LibSharedMedia-3.0, bundled unmodified |
 | `Images/` | Textures |
 
 To run a checkout in the game, `dev-link.bat` (Windows; not in the release zips) links

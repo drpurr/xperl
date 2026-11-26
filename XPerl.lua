@@ -1869,6 +1869,15 @@ local RaidIgnoredDebuffIDs = {
 	[71041] = true,					-- Dungeon Deserter
 	[71328] = true,					-- Dungeon Cooldown
 }
+-- Tracking buffs left off the buff row with row.hideTracking (player frame)
+local TrackingBuffIDs = {
+	[2580] = true,					-- Find Minerals
+	[2383] = true,					-- Find Herbs
+}
+-- The same plus CastableProcIDs, for rows that leave both out (one table, so the exclusion check stays a compare)
+local CastableProcAndTrackingIDs = {}
+for id in pairs(TrackingBuffIDs) do CastableProcAndTrackingIDs[id] = true end
+for id in pairs(CastableProcIDs or {}) do CastableProcAndTrackingIDs[id] = true end
 local SeasonalAndRaidDebuffIDs = {}
 for id in pairs(SeasonalDebuffIDs) do SeasonalAndRaidDebuffIDs[id] = true end
 for id in pairs(RaidIgnoredDebuffIDs) do SeasonalAndRaidDebuffIDs[id] = true end
@@ -2298,6 +2307,9 @@ local function Auras_ApplyFilters(self)
 				end
 			elseif (raid) then
 				exclude = CastableProcIDs
+			end
+			if (kind == "buffs" and row.hideTracking) then
+				exclude = exclude and CastableProcAndTrackingIDs or TrackingBuffIDs
 			end
 			local procCount = raid and maxCount or 0
 

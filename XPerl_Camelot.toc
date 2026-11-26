@@ -24,6 +24,8 @@
 ## IconTexture: Interface\Icons\INV_Misc_Gem_Pearl_02
 ## OptionalDeps: tullaCTC, OmniCC_GODMODE, MinimalistCooldownEdge
 Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\LibSharedMedia-3.0\lib.xml
 Libs\LibEditMode\embed.xml
 XPerl_Globals.xml
 XPerl.xml
