@@ -2069,8 +2069,12 @@ local function XPerl_Global_ConfigDefault(default)
 
 	default.buffs = {
 		cooldown	= 1,			-- 2.2.3
+		cooldownAny	= false,
 		countdown	= 1,			-- 2.2.2
+		countdownAny	= false,
+		countdownExternal = false,
 		countdownStart	= 20,			-- 2.2.2
+		ignoreSeasonal	= false,
 	}
 
 	default.rangeFinder = DefaultRangeFinder()

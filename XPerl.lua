@@ -849,7 +849,8 @@ local function SetSecretHealthBar(self, bar, hp, Max)
 		local hbt = bar.text
 		if (self.conf.healerMode and self.conf.healerMode.enable and self.conf.healerMode.type ~= 2) then
 			if (self.conf.healerMode.type == 1) then
-				hbt:SetText("-"..XPerl_NumberText(UnitHealthMissing(unit)).."/"..XPerl_NumberText(Max))
+				-- "-1234/12.3K", or blank at full health: a secret can't be tested, so there's no "0/12.3K"
+				hbt:SetText(C_StringUtil.WrapString(XPerl_UnitHealthDeficitText(unit), nil, "/"..XPerl_NumberText(Max)))
 			else
 				hbt:SetText(XPerl_UnitHealthDeficitText(unit))
 			end
