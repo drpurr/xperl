@@ -4,7 +4,8 @@
 -- Dropdowns added to the options window (the Edit Mode dialogs and the Settings panel get theirs from
 -- XPerl_EditModeSettings.lua). Loaded at the end of XPerl_FrameOptions.xml, once the pages exist. Each goes under
 -- an existing row, and whatever hung below that row moves down under it.
---  * "2D Portrait Style" under 3D Portrait on each portrait page; the "All" page's sets every portrait frame.
+--  * "2D Portrait Style" under 3D Portrait on each portrait page; the "All" page's sets every portrait frame. It is
+--    greyed out with 3D Portrait while the page's Portrait is off.
 --  * "Font" and "Outline" (the global font, conf.font) on the "All" page, under its 2D Portrait Style.
 
 local PAGES = {
@@ -16,7 +17,7 @@ local PAGES = {
 }
 
 -- Every frame key with a 2D Portrait Style setting (XPerl_EditModeSettings.lua), for the "All" page
-local ALL_KEYS = {"player", "pet", "target", "focus", "party", "boss", "arena"}
+local ALL_KEYS = {"player", "pet", "target", "focus", "party", "arena"}
 
 -- Children of `parent` anchored to `old`, with their points
 local function Followers(parent, old)
@@ -63,6 +64,7 @@ local function AddDropdown(above, suffix, label, values, isSelected, select)
 	end)
 	-- Edit Mode, the Settings panel and profiles change these too: show the current value when the page opens
 	holder:SetScript("OnShow", function() dropdown:GenerateMenu() end)
+	holder.dropdown, holder.label = dropdown, text
 
 	for child, points in pairs(followers) do
 		child:ClearAllPoints()
@@ -111,10 +113,25 @@ local function AddStyleDropdown(above, keys)
 		end)
 end
 
+-- Greys the dropdown out while the page's Portrait check button is off
+local function FollowPortrait(holder, portrait)
+	if (not portrait) then
+		return
+	end
+	local function Update()
+		local on = portrait:GetChecked() and true or false
+		holder.dropdown:SetEnabled(on)
+		holder.label:SetTextColor((on and NORMAL_FONT_COLOR or GRAY_FONT_COLOR):GetRGB())
+	end
+	portrait:HookScript("OnClick", Update)
+	holder:HookScript("OnShow", Update)
+end
+
 for _, info in ipairs(PAGES) do
-	local above = _G["XPerl_Options_"..info.page.."_Options_Portrait3D"]
+	local prefix = "XPerl_Options_"..info.page.."_Options"
+	local above = _G[prefix.."_Portrait3D"]
 	if (above) then
-		AddStyleDropdown(above, {info.key})
+		FollowPortrait(AddStyleDropdown(above, {info.key}), _G[prefix.."_Portrait"])
 	end
 end
 
@@ -138,6 +155,7 @@ end
 
 if (XPerl_Options_All_Options_Portrait3D) then
 	local style = AddStyleDropdown(XPerl_Options_All_Options_Portrait3D, ALL_KEYS)
+	FollowPortrait(style, _G.XPerl_Options_All_Options_Portrait)
 	local faceSelected, faceSet = FontSetting("face", "default")
 	local face = AddDropdown(style, "FontFace", XPERL_CONF_FONT_FACE, XPerl_FontFaces, faceSelected, faceSet)
 	local outlineSelected, outlineSet = FontSetting("outline", "NONE")

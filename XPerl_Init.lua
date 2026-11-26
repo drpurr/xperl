@@ -355,17 +355,24 @@ end
 
 -- XPerl_RegisterUnitText(self)
 local unitText = {}
-local SetTextFont
+local SetTextFont, textFontOriginal
 function XPerl_RegisterUnitText(self)
 	tinsert(unitText, self)
+	-- Frame code sets fonts again later (party names on every update, the health text with the bar layout,
+	-- raid InitType): the global font goes back on top, over the new font as the text's own
+	hooksecurefunc(self, "SetFontObject", function(text)
+		textFontOriginal[text] = nil
+		if (conf) then
+			SetTextFont(text)
+		end
+	end)
 	if (conf) then
 		SetTextFont(self)
 	end
 end
 
 -- Global font (conf.font): face is a LibSharedMedia font name or "default" (the text's own font), outline one of
--- XPerl_FontOutlines or "NONE". With both at their defaults every text keeps its own font; otherwise each text
--- keeps its own size and takes the chosen face (or its own) and outline (none for "NONE").
+-- XPerl_FontOutlines or "NONE" (the text's own outline). Each text keeps its own size.
 XPerl_FontOutlines = {
 	{"XPERL_CONF_FONT_OUTLINE_NONE", "NONE"},
 	{"XPERL_CONF_FONT_OUTLINE_OUTLINE", "OUTLINE"},
@@ -387,7 +394,7 @@ function XPerl_FontFaces()
 	return faces
 end
 
-local textFontOriginal = setmetatable({}, {__mode = "k"})	-- text -> {face, flags} it had before the global font
+textFontOriginal = setmetatable({}, {__mode = "k"})	-- text -> {face, flags} it had before the global font
 
 SetTextFont = function(text)
 	if (not text.GetFont or (text.IsForbidden and text:IsForbidden())) then
@@ -412,7 +419,7 @@ SetTextFont = function(text)
 		textFontOriginal[text] = original
 	end
 	if (active) then
-		text:SetFont(face or original[1], size, outline == "NONE" and "" or outline)
+		text:SetFont(face or original[1], size, outline == "NONE" and original[2] or outline)
 	else
 		text:SetFont(original[1], size, original[2])
 		textFontOriginal[text] = nil

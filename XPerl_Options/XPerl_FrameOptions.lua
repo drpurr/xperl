@@ -2122,6 +2122,7 @@ local function XPerl_Target_ConfigDefault(default, section)
 		icons			= XPerl_DefaultStatusIcons(section),
 		portrait		= 1,
 		portrait3D		= 1,
+		portraitStyle	= "default",
 		castBar = {
 			enable		= 1,
 		},
@@ -2189,6 +2190,7 @@ local function XPerl_Party_ConfigDefault(default)
 		anchor			= "TOP",
 		portrait		= 1,
 		portrait3D		= 1,
+		portraitStyle	= "default",
 		hitIndicator	= 1,			-- 2.1.7
 		threat			= 1,
 		threatMode		= "portraitFrame",
@@ -2271,6 +2273,7 @@ local function XPerl_Player_ConfigDefault(default)
 		},
 		portrait		= 1,
 		portrait3D		= 1,
+		portraitStyle	= "default",
 		hitIndicator	= 1,
 		threat			= 1,
 		threatMode		= "portraitFrame",
@@ -2334,6 +2337,7 @@ local function XPerl_Pet_ConfigDefault(default)
 		},
 		portrait		= 1,
 		portrait3D		= 1,
+		portraitStyle	= "default",
 		hitIndicator	= 1,
 		threat			= 1,
 		threatMode		= "portraitFrame",
@@ -2507,6 +2511,7 @@ local frameDefaults = {
 			spacing			= 46,
 			growth			= "down",
 --			portrait		= nil,
+			portraitStyle	= "default",
 			classIcon		= 1,			-- the specialization icon
 			trinket			= 1,
 			castBar = {
