@@ -11668,4 +11668,5 @@
 			</Frame>
 		</Frames>
 	</Frame>
+	<Script file="XPerl_PortraitStyle.lua"/>
 </Ui>

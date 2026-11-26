@@ -1901,6 +1901,62 @@ AuraCountdownFormatter:SetBreakpoints({
 	{threshold = 1, format = "%d", step = 1, rounding = Enum.NumericRuleFormatRounding.Down},
 })
 
+-- MiniCE (MinimalistCooldownEdge)
+-- With MiniCE installed and its Unit Frames style on, the countdown text takes MiniCE's font, size, outline and
+-- duration colours, and its cooldown-number format, so aura timers match the cooldown numbers MiniCE draws.
+-- Without it (or with that style off) nothing changes. MiniCE sizes text for 25-unit nameplate aura icons, so
+-- the size scales with the icon (32, or 64 for big ones).
+local MINICE_CATEGORY = "unitframe"
+local MINICE_REFERENCE_ICON = (NamePlateConstants and NamePlateConstants.AURA_ITEM_HEIGHT) or 25
+local miniCE, miniCEFormatter
+
+local function MiniCE_Addon()
+	if (not miniCE) then
+		local ace = LibStub("AceAddon-3.0", true)
+		miniCE = ace and ace:GetAddon("MinimalistCooldownEdge", true) or nil
+	end
+	return miniCE
+end
+
+-- MiniCE's Unit Frames settings and its duration colour curve, when that style is on
+local function MiniCE_Style()
+	local mce = MiniCE_Addon()
+	local profile = mce and mce.db and mce.db.profile
+	local config = profile and profile.categories and profile.categories[MINICE_CATEGORY]
+	if (not config or not config.enabled) then
+		return
+	end
+	local colors = mce:GetModule("DurationColorController", true)
+	local curve = colors and colors:GetDurationTextCurve(MINICE_CATEGORY, config)
+	if (curve) then
+		return mce, config, curve
+	end
+end
+
+-- Whole seconds rounded up with no unit, then 2m, 1h, 1d: MiniCE's cooldown numbers
+local function MiniCE_Formatter()
+	if (not miniCEFormatter) then
+		local up = Enum.NumericRuleFormatRounding.Up
+		miniCEFormatter = C_StringUtil.CreateNumericRuleFormatter()
+		miniCEFormatter:SetBreakpoints({
+			{threshold = 0, format = "%d", step = 1, rounding = up},
+			{threshold = 60, format = "%dm", step = 1, rounding = up, components = {{div = 60}}},
+			{threshold = 3600, format = "%dh", step = 1, rounding = up, components = {{div = 3600}}},
+			{threshold = 86400, format = "%dd", step = 1, rounding = up, components = {{div = 86400}}},
+		})
+	end
+	return miniCEFormatter
+end
+
+local function MiniCE_ApplyFont(text, mce, config, iconSize)
+	local path = mce.ResolveFontPath(config.font)
+	local size = (tonumber(config.fontSize) or 18) * iconSize / MINICE_REFERENCE_ICON
+	local flags = mce.NormalizeFontStyle(config.fontStyle)
+	if (not text:SetFont(path, size, flags)) then
+		text:SetFont(STANDARD_TEXT_FONT, size, flags)
+	end
+end
+
 -- AuraButton_Style
 -- style.external hands the countdown to cooldown text add-ons (tullaCTC, OmniCC GODMODE): the icon shows
 -- the cooldown's own countdown numbers, which those add-ons restyle, instead of X-Perl's countdown text.
@@ -1938,10 +1994,25 @@ local function AuraButton_Style(button, style)
 	end
 
 	if (style.countdown and not external) then
-		button:SetDurationText(button.CountdownHolder.Countdown, {
-			textFormatter = AuraCountdownFormatter,
-			textColor = {curve = AuraCountdownCurve(), property = Enum.DurationTextBindingProperty.RemainingDuration},
-		})
+		local text = button.CountdownHolder.Countdown
+		local mce, mceConfig, mceCurve = MiniCE_Style()
+		if (mceCurve) then
+			button:SetDurationText(text, {
+				textFormatter = MiniCE_Formatter(),
+				textColor = {curve = mceCurve, property = Enum.DurationTextBindingProperty.RemainingDuration},
+			})
+			MiniCE_ApplyFont(text, mce, mceConfig, style.size)
+			button.miniCEFont = true
+		else
+			if (button.miniCEFont) then
+				button.miniCEFont = nil
+				text:SetFontObject(GameFontNormalLarge)
+			end
+			button:SetDurationText(text, {
+				textFormatter = AuraCountdownFormatter,
+				textColor = {curve = AuraCountdownCurve(), property = Enum.DurationTextBindingProperty.RemainingDuration},
+			})
+		end
 		button.CountdownHolder:SetAlpha(1)
 	else
 		button:ClearDurationText()
@@ -2051,6 +2122,65 @@ local function Auras_Restyle(self)
 			end
 		end)
 	end
+end
+
+-- MiniCE setting changes restyle every aura row. MiniCE runs ForceUpdateAll after every option change (sliders
+-- included), so this waits for changes to settle, and only restyles when a setting the countdown reads changed.
+local auraFrames = setmetatable({}, {__mode = "k"})		-- frames with aura rows (XPerl_Auras_Init)
+
+local function MiniCE_Signature()
+	local mce = MiniCE_Addon()
+	local profile = mce and mce.db and mce.db.profile
+	if (not profile) then
+		return ""
+	end
+	local parts = {}
+	local function Add(value)
+		if (type(value) == "table") then
+			local keys = {}
+			for key in pairs(value) do
+				keys[#keys + 1] = tostring(key)
+			end
+			table.sort(keys)
+			for _, key in ipairs(keys) do
+				parts[#parts + 1] = key
+				Add(value[key] ~= nil and value[key] or value[tonumber(key)])
+			end
+		else
+			parts[#parts + 1] = tostring(value)
+		end
+	end
+	Add(profile.categories and profile.categories[MINICE_CATEGORY])
+	Add(profile.durationTextColors)
+	return table.concat(parts, "|")
+end
+
+do
+	local watcher = CreateFrame("Frame")
+	watcher:RegisterEvent("PLAYER_LOGIN")
+	watcher:SetScript("OnEvent", function(self)
+		self:UnregisterEvent("PLAYER_LOGIN")
+		local mce = MiniCE_Addon()
+		if (not mce or type(mce.ForceUpdateAll) ~= "function") then
+			return
+		end
+		local lastSignature, timer = MiniCE_Signature()
+		hooksecurefunc(mce, "ForceUpdateAll", function()
+			if (timer) then
+				timer:Cancel()
+			end
+			timer = C_Timer.NewTimer(0.5, function()
+				timer = nil
+				local signature = MiniCE_Signature()
+				if (signature ~= lastSignature) then
+					lastSignature = signature
+					for frame in pairs(auraFrames) do
+						Auras_Restyle(frame)
+					end
+				end
+			end)
+		end)
+	end)
 end
 
 -- Auras_On
@@ -2250,6 +2380,7 @@ function XPerl_Auras_Init(self, setup)
 	local auras = {setup = setup, style = {}, maxCount = {}, exclude = {}, enchants = {}, hostile = false,
 		outOfSight = false, unit = "none"}
 	self.auras = auras
+	auraFrames[self] = true
 	auras.buffs, auras.style.buffs = Auras_CreateContainer(self, "buffs", setup)
 	auras.debuffs, auras.style.debuffs = Auras_CreateContainer(self, "debuffs", setup)
 
@@ -2465,6 +2596,60 @@ end
 -- Reloading a model blanks it until its file streams back in, so a model that already shows the unit (same
 -- GUID, file loaded) is kept; full refreshes (party roster updates and the like) would blink it otherwise.
 -- UNIT_MODEL_CHANGED (the unit's looks changed) always reloads.
+-- 2D portrait styles (conf.portraitStyle): "default" keeps the portrait; any other style draws players as their
+-- class icon from Images\PortraitStyles\<style>.tga, an 8x8 sheet of 128px cells. {value, label key} in menu order.
+XPerl_PortraitStyles = {
+	{"default", "XPERL_CONF_PORTRAITSTYLE_DEFAULT"},
+	{"modern", "XPERL_CONF_PORTRAITSTYLE_MODERN"},
+	{"arcade", "XPERL_CONF_PORTRAITSTYLE_ARCADE"},
+	{"glyph", "XPERL_CONF_PORTRAITSTYLE_GLYPH"},
+	{"legend", "XPERL_CONF_PORTRAITSTYLE_LEGEND"},
+	{"midnight", "XPERL_CONF_PORTRAITSTYLE_MIDNIGHT"},
+	{"pixel", "XPERL_CONF_PORTRAITSTYLE_PIXEL"},
+	{"pixelsComic", "XPERL_CONF_PORTRAITSTYLE_COMIC"},
+	{"runic", "XPERL_CONF_PORTRAITSTYLE_RUNIC"},
+}
+local PortraitStylePath = "Interface\\AddOns\\XPerl\\Images\\PortraitStyles\\"
+local PortraitStyleValid = {}
+for _, style in ipairs(XPerl_PortraitStyles) do
+	PortraitStyleValid[style[1]] = true
+end
+-- Cell of each class on the sheets: left, right, top, bottom
+local PortraitStyleCoords = {
+	WARRIOR     = {0,     0.125, 0,     0.125},
+	MAGE        = {0.125, 0.25,  0,     0.125},
+	ROGUE       = {0.25,  0.375, 0,     0.125},
+	DRUID       = {0.375, 0.5,   0,     0.125},
+	EVOKER      = {0.5,   0.625, 0,     0.125},
+	HUNTER      = {0,     0.125, 0.125, 0.25},
+	SHAMAN      = {0.125, 0.25,  0.125, 0.25},
+	PRIEST      = {0.25,  0.375, 0.125, 0.25},
+	WARLOCK     = {0.375, 0.5,   0.125, 0.25},
+	PALADIN     = {0,     0.125, 0.25,  0.375},
+	DEATHKNIGHT = {0.125, 0.25,  0.25,  0.375},
+	MONK        = {0.25,  0.375, 0.25,  0.375},
+	DEMONHUNTER = {0.375, 0.5,   0.25,  0.375},
+}
+
+-- The style and class cell to draw for a unit, or nil for its normal portrait (style "default", not a
+-- player, or a class that can't be read)
+local function PortraitStyleCell(c, unit)
+	local style = c.portraitStyle
+	if (not style or style == "default" or not PortraitStyleValid[style]) then
+		return
+	end
+	local isPlayer = UnitIsPlayer(unit)
+	if (issecretvalue(isPlayer) or not isPlayer) then
+		return
+	end
+	local _, class = UnitClass(unit)
+	if (not class or issecretvalue(class)) then
+		return
+	end
+	local coords = PortraitStyleCoords[class]
+	return coords and style, coords
+end
+
 function XPerl_Unit_UpdatePortrait(self, event)
 	local c = self.conf
 	if (not c or not c.portrait) then
@@ -2472,6 +2657,17 @@ function XPerl_Unit_UpdatePortrait(self, event)
 	end
 	local pf, unit = self.portraitFrame, self.partyid
 	local model = pf.portrait3D
+
+	local style, coords = PortraitStyleCell(c, unit)
+	if (style) then
+		pf.portrait:SetTexture(PortraitStylePath..style)
+		pf.portrait:SetTexCoord(unpack(coords))
+		pf.portrait:Show()
+		model:Hide()
+		model.guid = nil		-- reload the model if the style goes back to default
+		return
+	end
+	pf.portrait:SetTexCoord(0, 1, 0, 1)
 	SetPortraitTexture(pf.portrait, unit)
 	local show3D = c.portrait3D and UnitIsVisible(unit) and not (C_Secrets and C_Secrets.ShouldUnitIdentityBeSecret(unit))
 	if (show3D) then
