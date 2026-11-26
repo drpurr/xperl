@@ -5,3 +5,4 @@ ignore:
    - .editorconfig
    - .luacheckrc
    - dev-link.bat
+   - CLAUDE.md
