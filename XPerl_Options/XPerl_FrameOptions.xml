@@ -4670,6 +4670,7 @@
 											XPerl_Options_EnableSibling(self,"PlayerBuffsAbove")
 											XPerl_Options_EnableSibling(self,"HideBlizzardBuffBar")
 											XPerl_Options_EnableSibling(self,"Cooldowns")
+											XPerl_Options_EnableSibling(self,"OnlyMyBuffs")
 											XPerl_Options_EnableSibling(self,"MaxBuffs")
 											XPerl_Options_EnableSibling(self,"BuffSize")
 											XPerl_Options_EnableSibling(self,"DebuffSize")
@@ -4754,10 +4755,28 @@
 								</Scripts>
 							</CheckButton>
 
+							<CheckButton name="$parent_OnlyMyBuffs" inherits="XPerlCheckButtonTemplate">
+								<Size><AbsDimension x="26" y="26"/></Size>
+								<Anchors>
+									<Anchor point="TOPLEFT" relativeTo="$parent_Cooldowns" relativePoint="BOTTOMLEFT">
+										<Offset><AbsDimension x="0" y="6"/></Offset>
+									</Anchor>
+								</Anchors>
+								<Scripts>
+									<OnLoad>
+										XPerl_OptionsSetMyText(self, "XPERL_CONF_PLAYER_ONLYMYBUFFS")
+										self.flashFrame = XPerl_PlayerbuffFrame
+										self.configBase = "XPerlDB.player.buffs"
+										self.configIndex = "onlyMine"
+										self.configClick = XPerl_Player_Reset
+									</OnLoad>
+								</Scripts>
+							</CheckButton>
+
 							<Slider name="$parent_MaxBuffs" inherits="XPerlSlider">
 								<Size><AbsDimension x="110" y="16"/></Size>
 								<Anchors>
-									<Anchor point="TOPLEFT" relativeTo="$parent_Cooldowns" relativePoint="BOTTOMLEFT">
+									<Anchor point="TOPLEFT" relativeTo="$parent_OnlyMyBuffs" relativePoint="BOTTOMLEFT">
 										<Offset>
 											<AbsDimension x="6" y="-10"/>
 										</Offset>

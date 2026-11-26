@@ -2,8 +2,9 @@
 -- License: GNU GPL v3, 29 June 2007 (see LICENSE.txt)
 --
 -- "2D Portrait Style" dropdown on the options window's portrait pages, right under 3D Portrait (the Edit Mode
--- dialogs and the Settings panel get theirs from XPerl_EditModeSettings.lua). Loaded at the end of
--- XPerl_FrameOptions.xml, once the pages exist; whatever hung below 3D Portrait moves down under it.
+-- dialogs and the Settings panel get theirs from XPerl_EditModeSettings.lua). The "All" page sets every frame
+-- with a portrait at once. Loaded at the end of XPerl_FrameOptions.xml, once the pages exist; whatever hung
+-- below 3D Portrait moves down under it.
 
 local PAGES = {
 	{page = "Player", key = "player"},
@@ -12,6 +13,9 @@ local PAGES = {
 	{page = "Focus", key = "focus"},
 	{page = "Party", key = "party"},
 }
+
+-- Every frame key with a 2D Portrait Style setting (XPerl_EditModeSettings.lua), for the "All" page
+local ALL_KEYS = {"player", "pet", "target", "focus", "party", "boss", "arena"}
 
 -- Children of `parent` anchored to `old`, with their points
 local function Followers(parent, old)
@@ -34,7 +38,8 @@ local function Current(key)
 	return section and section.portraitStyle or "default"
 end
 
-local function AddDropdown(above, key)
+-- keys: the frame keys the dropdown sets; it shows a style as chosen only when they all have it
+local function AddDropdown(above, keys)
 	local parent = above:GetParent()
 	local followers = Followers(parent, above)
 
@@ -52,13 +57,22 @@ local function AddDropdown(above, key)
 		for _, style in ipairs(XPerl_PortraitStyles) do
 			local value = style[1]
 			root:CreateRadio(_G[style[2]] or value,
-				function() return Current(key) == value end,
 				function()
-					local section = XPerlDB and XPerlDB[key]
-					if (section) then
-						section.portraitStyle = value
-						XPerl_OptionActions()
+					for _, key in ipairs(keys) do
+						if (Current(key) ~= value) then
+							return false
+						end
 					end
+					return true
+				end,
+				function()
+					for _, key in ipairs(keys) do
+						local section = XPerlDB and XPerlDB[key]
+						if (section) then
+							section.portraitStyle = value
+						end
+					end
+					XPerl_OptionActions()
 				end)
 		end
 	end)
@@ -76,6 +90,10 @@ end
 for _, info in ipairs(PAGES) do
 	local above = _G["XPerl_Options_"..info.page.."_Options_Portrait3D"]
 	if (above) then
-		AddDropdown(above, info.key)
+		AddDropdown(above, {info.key})
 	end
+end
+
+if (XPerl_Options_All_Options_Portrait3D) then
+	AddDropdown(XPerl_Options_All_Options_Portrait3D, ALL_KEYS)
 end
